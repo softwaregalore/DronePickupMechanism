@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <style>
+            html {
+                font-family: Arial;
+                background-color: black;
+                color: white;
+            }
+            h2, p {
+                text-align: center;
+            }
+            p {
+                color: red;
+            }
+            div {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            button {
+                user-select: none;
+                -webkit-user-select: none;
+                color: black;
+                border-style: solid;
+                border-width: 2px;
+                border-color: white;
+                margin-top: 4px;
+                margin-left: 4px;
+                margin-right: 4px;
+                text-align: center;
+                width: 110px;
+                height: 35px;
+                background-color: darkgrey;
+            }
+            button:hover {
+                background-color: grey;
+            }
+            button:active {
+                background-color: red;
+            }
+            input {
+                border-style: solid;
+                border-width: 2px;
+                margin-top: 4px;
+                margin-left: 4px;
+                margin-right: 4px;
+                text-align: center;
+                width: 110px;
+                height: 35px;
+                background-color: white;
+            }
+            
+        </style>
+        <h2>Pickup Mechanism Control</h2>
+        <p id="lp">Light Pressure is: false</p>
+        <p id="cp">Current Position Value is: 102</p>
+        <script>
+            function checkPressure() {
+                if (lightPressure == true) {
+                    Close = true;
+                    magnitude = 12;
+                }
+            }
+            var gateway = `ws://${window.location.hostname}/ws`;
+            var websocket;
+            websocket = new WebSocket(gateway);
+            var text = document.getElementById('input');
+            var button = document.getElementById('button');
+            
+            var lightPressure = false;
+            var posC = 102;//starting position. Change this to accomodate for servo drift.
+            var pos = posC;
+            var Open, Close = false;
+            var magnitude = 25;//default pos change
+            document.addEventListener('keydown', (e)=>{
+                if (e.code == 'ArrowUp') {
+                    Close = true;
+                    magnitude = 25;
+                }
+                if (e.code == 'ArrowDown') {
+                    Open = true;
+                    magnitude = 25;
+                }
+            });
+            document.addEventListener('keyup', (e)=>{
+                if (e.code == 'ArrowUp') {
+                    Close = false;
+                }
+                if (e.code == 'ArrowDown') {
+                    Open = false;
+                }
+            });
+            setInterval(()=>{
+                document.getElementById("lp").innerHTML = "Light Pressure is: " + String(lightPressure);
+                document.getElementById("cp").innerHTML = "Current Position Value is: " + String(pos);
+                if (Open == true) {
+                    pos = (posC + magnitude);
+                } else if (Close == true) {
+                    pos = (posC - magnitude);
+                } else {
+                    pos = posC;
+                }
+                websocket.send(pos);
+            }, 100);
+
+        </script>
+        <div><button onmousedown="Open = true; magnitude = 25;" onmouseup="Open = false;checkPressure();" ontouchstart="Open = true; magnitude = 25;" ontouchend="Open = false;checkPressure();" onmouseleave="Open = false;checkPressure();">Open Clamp</button>
+        <button onmousedown="Close = true; magnitude = 25;" onmouseup="Close = false;checkPressure();" ontouchstart="Close = true; magnitude = 25;" ontouchend="Close = false;checkPressure();" onmouseleave="Close = false;checkPressure();">Close Clamp</button>
+        <button onmousedown="lightPressure = true; checkPressure();" ontouchstart="lightPressure = true; checkPressure();">Light Pressure On</button>
+        <button onmousedown="Close = false;lightPressure = false;" ontouchstart="Close = false;lightPressure = false;">Light Pressure Off</button>
+        <button onmousedown="Open = true; magnitude = 70;" onmouseup="Open = false;checkPressure();" ontouchstart="Open = true; magnitude = 70;" ontouchend="Open = false;checkPressure();" onmouseleave="Open = false;checkPressure();">Release</button></div>
+        <br>
+        <div><input type="text" id="recenter" value="102"></input><button onclick="posC = Number(document.getElementById('recenter').value;)">Recenter Servo</button></div>
+        
+    </body>
+</html>
